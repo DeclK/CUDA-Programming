@@ -16,4 +16,5 @@ do                                                    \
         exit(1);                                      \
     }                                                 \
 } while (0)
-
+// __LINE__ is a preprocessor macro that expands to the line number as a decimal constant
+// __FILE__ is a preprocessor macro that expands to the name of the current input file, in the form of a C string constant

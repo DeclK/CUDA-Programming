@@ -1,0 +1,12 @@
+{
+    "configurations": [
+        {
+            "name": "NVCC: CUDA 11.8",	// any string
+            "includePath": [
+                "${workspaceFolder}/**" // include all files in the workspace
+            ],
+            "compilerPath": "/usr/local/cuda/bin/nvcc"
+        }
+    ],
+    "version": 4
+}

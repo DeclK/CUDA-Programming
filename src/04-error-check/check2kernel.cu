@@ -22,17 +22,17 @@ int main(void)
         h_x[n] = a;
         h_y[n] = b;
     }
-
     double *d_x, *d_y, *d_z;
-    CHECK(cudaMalloc((void **)&d_x, M));
+    CHECK(cudaMalloc(reinterpret_cast<void**>(&d_x), M));
     CHECK(cudaMalloc((void **)&d_y, M));
     CHECK(cudaMalloc((void **)&d_z, M));
     CHECK(cudaMemcpy(d_x, h_x, M, cudaMemcpyHostToDevice));
     CHECK(cudaMemcpy(d_y, h_y, M, cudaMemcpyHostToDevice));
 
-    const int block_size = 1280;
+    const int block_size = 128;
     const int grid_size = (N + block_size - 1) / block_size;
     add<<<grid_size, block_size>>>(d_x, d_y, d_z, N);
+    // CHECK(cudaDeviceSynchronize());
     CHECK(cudaGetLastError());
     CHECK(cudaDeviceSynchronize());
 
@@ -53,7 +53,7 @@ void __global__ add(const double *x, const double *y, double *z, const int N)
     const int n = blockDim.x * blockIdx.x + threadIdx.x;
     if (n < N)
     {
-        z[n] = x[n] + y[n];
+        z[n] = x[n] + y[n+1000000000]; // out of bounds code
     }
 }
 

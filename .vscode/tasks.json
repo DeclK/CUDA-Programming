@@ -1,0 +1,42 @@
+{
+    "tasks": [
+        {
+            "type": "cppbuild",
+            "label": "NVCC/CUDA11.4 build GEMM Task",
+            "command": "nvcc",
+            "args": [
+				"-std=c++17",
+				"-U__CUDA_NO_HALF_OPERATORS__",
+				"-U__CUDA_NO_HALF_CONVERSIONS__",
+				"-U__CUDA_NO_HALF2_OPERATORS__",
+				"-U__CUDA_NO_BFLOAT16_CONVERSIONS__",
+				"--expt-relaxed-constexpr",
+				"--expt-extended-lambda",
+				"--use_fast_math",
+				"-arch=sm_80",
+				// "-O3",
+				// "-gencode arch=compute_80,code=sm_80",
+				// "-Xcompiler=-std=c++14",
+				"-lcublas",
+				// "-g",
+				// "-G",
+				"-o",
+				"${fileDirname}/run_program.bin",
+				// "/lpai/volumes/perception/fengjinyuan/workspace/cuda_tutorial/flash_atten/src/flash_api.cu",
+				// "/lpai/volumes/perception/fengjinyuan/workspace/cuda_tutorial/flash_atten/src/flash_fwd_hdim32_fp16_sm80.cu",
+				// "/lpai/volumes/perception/fengjinyuan/workspace/cuda_tutorial/flash_atten/src/flash_fwd_hdim64_fp16_sm80.cu",
+				"${file}"
+
+            ],
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "NVCC compile GEMM project",
+        }
+    ],
+    "version": "2.0.0"
+}

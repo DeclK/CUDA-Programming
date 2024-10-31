@@ -10,7 +10,7 @@
 
 const int NUM_REPEATS = 10;
 const int N1 = 1024;
-const int MAX_NUM_STREAMS = 30;
+const int MAX_NUM_STREAMS = 128;
 const int N = N1 * MAX_NUM_STREAMS;
 const int M = sizeof(real) * N;
 const int block_size = 128;
@@ -71,6 +71,18 @@ void __global__ add(const real *d_x, const real *d_y, real *d_z)
     }
 }
 
+void __global__ add_2(const real *d_x, const real *d_y, real *d_z, const int num)
+{
+    const int n = blockDim.x * blockIdx.x + threadIdx.x;
+    if (n < num)  // no stream used, just use the global index
+    {
+        for (int i = 0; i < 10000; ++i)
+        {
+            d_z[n] = d_x[n] + d_y[n];
+        }
+    }
+}
+
 void timing(const real *d_x, const real *d_y, real *d_z, const int num)
 {
     float t_sum = 0;
@@ -84,12 +96,15 @@ void timing(const real *d_x, const real *d_y, real *d_z, const int num)
         CHECK(cudaEventRecord(start));
         cudaEventQuery(start);
 
-        for (int n = 0; n < num; ++n)
-        {
-            int offset = n * N1;
-            add<<<grid_size, block_size, 0, streams[n]>>>
-            (d_x + offset, d_y + offset, d_z + offset);
-        }
+        // for (int n = 0; n < num; ++n)
+        // {
+        //     int offset = n * N1;
+        //     add<<<grid_size, block_size, 0, streams[n]>>>
+        //     (d_x + offset, d_y + offset, d_z + offset);
+        // }
+        
+        // multiply the grid size instead of the number of streams
+        add_2<<<grid_size * num, block_size>>>(d_x, d_y, d_z, grid_size * num * block_size);
  
         CHECK(cudaEventRecord(stop));
         CHECK(cudaEventSynchronize(stop));

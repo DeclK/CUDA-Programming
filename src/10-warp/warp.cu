@@ -31,7 +31,10 @@ void __global__ test_warp_primitives(void)
     unsigned mask2 = __ballot_sync(FULL_MASK, tid == 0);
     if (tid == 0) printf("FULL_MASK = %x\n", FULL_MASK);
     if (tid == 1) printf("mask1     = %x\n", mask1);
+    // print it as binary 
+    if (tid == 1) printf("mask1 binary = 11111111111111111111111111111110\n");
     if (tid == 0) printf("mask2     = %x\n", mask2);
+    if (tid == 0) printf("mask2 binary = 00000000000000000000000000000001\n");
 
     int result = __all_sync(FULL_MASK, tid);
     if (tid == 0) printf("all_sync (FULL_MASK): %d\n", result);
@@ -50,7 +53,7 @@ void __global__ test_warp_primitives(void)
     printf("%2d ", value);
     if (tid == 0) printf("\n");
 
-    value = __shfl_up_sync(FULL_MASK, tid, 1, WIDTH);
+    value = __shfl_up_sync(FULL_MASK, tid, 2, WIDTH);
     if (tid == 0) printf("shfl_up:   ");
     printf("%2d ", value);
     if (tid == 0) printf("\n");

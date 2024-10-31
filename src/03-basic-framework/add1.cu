@@ -1,7 +1,7 @@
 #include <math.h>
 #include <stdio.h>
 
-const double EPSILON = 1.0e-15;
+const double EPSILON = 1.0e-8;
 const double a = 1.23;
 const double b = 2.34;
 const double c = 3.57;
@@ -31,7 +31,10 @@ int main(void)
 
     const int block_size = 128;
     const int grid_size = N / block_size;
-    add<<<grid_size, block_size>>>(d_x, d_y, d_z);
+    add<<<grid_size, block_size>>>(d_x, d_y, d_z, N);
+
+    printf("LINE is %d\n", __LINE__);
+    printf(__FILE__);
 
     cudaMemcpy(h_z, d_z, M, cudaMemcpyDeviceToHost);
     check(h_z, N);
@@ -59,6 +62,8 @@ void check(const double *z, const int N)
         if (fabs(z[n] - c) > EPSILON)
         {
             has_error = true;
+            printf("error is: %.10f\n", fabs(z[n] - c));
+            return;
         }
     }
     printf("%s\n", has_error ? "Has errors" : "No errors");
