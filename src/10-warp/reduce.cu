@@ -65,6 +65,7 @@ void __global__ reduce_syncwarp(const real *d_x, real *d_y, const int N)
             s_y[tid] += s_y[tid + offset];
         }
         __syncwarp();
+        // __syncthreads();
     }
 
     if (tid == 0)
@@ -136,6 +137,32 @@ void __global__ reduce_cp(const real *d_x, real *d_y, const int N)
     }
 }
 
+void __global__ reduce_cg(const real *d_x, real *d_y, const int N)
+{
+    /*Only global memory and cooperative group, answered by GPT,
+    bad performance and bad precision.
+    */
+    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    real sum = 0;
+    if (idx < N)
+    {
+        sum = d_x[idx];
+    }
+    // create a tile partition
+    thread_block_tile<32> tile32 = tiled_partition<32>(this_thread_block());
+
+    // reduce the sum in the tile
+    for (int i = tile32.size() >> 1; i > 0; i >>= 1)
+    {
+        sum += tile32.shfl_down(sum, i);
+    }
+
+    if (tile32.thread_rank() == 0)
+    {
+        atomicAdd(d_y, sum);
+    }
+}
+
 real reduce(const real *d_x, const int method)
 {
     const int grid_size = (N + BLOCK_SIZE - 1) / BLOCK_SIZE;
@@ -155,7 +182,7 @@ real reduce(const real *d_x, const int method)
             reduce_shfl<<<grid_size, BLOCK_SIZE, smem>>>(d_x, d_y, N);
             break;
         case 2:
-            reduce_cp<<<grid_size, BLOCK_SIZE, smem>>>(d_x, d_y, N);
+            reduce_cg<<<grid_size, BLOCK_SIZE, smem>>>(d_x, d_y, N);
             break;
         default:
             printf("Wrong method.\n");
@@ -171,7 +198,7 @@ real reduce(const real *d_x, const int method)
 void timing(const real *d_x, const int method)
 {
     real sum = 0;
-    
+    float elapsed_time_all = 0;
     for (int repeat = 0; repeat < NUM_REPEATS; ++repeat)
     {
         cudaEvent_t start, stop;
@@ -186,13 +213,16 @@ void timing(const real *d_x, const int method)
         CHECK(cudaEventSynchronize(stop));
         float elapsed_time;
         CHECK(cudaEventElapsedTime(&elapsed_time, start, stop));
-        printf("Time = %g ms.\n", elapsed_time);
+        // printf("Time = %g ms.\n", elapsed_time);
+        elapsed_time_all += elapsed_time;
 
         CHECK(cudaEventDestroy(start));
         CHECK(cudaEventDestroy(stop));
     }
 
+    printf("Average time = %g ms.\n", elapsed_time_all / NUM_REPEATS);
     printf("sum = %f.\n", sum);
+    
 }
 
 

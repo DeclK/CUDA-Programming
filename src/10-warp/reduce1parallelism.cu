@@ -45,7 +45,7 @@ void __global__ reduce_cp(const real *d_x, real *d_y, const int N)
     const int stride = blockDim.x * gridDim.x;
     for (int n = bid * blockDim.x + tid; n < N; n += stride)
     {
-        y += d_x[n];
+        y += d_x[n];    // sum(d[:, bid, tid]) grid ranges
     }
     s_y[tid] = y;
     __syncthreads();
@@ -94,7 +94,7 @@ real reduce(const real *d_x)
 void timing(const real *d_x)
 {
     real sum = 0;
-
+    float elapsed_time_sum = 0;
     for (int repeat = 0; repeat < NUM_REPEATS; ++repeat)
     {
         cudaEvent_t start, stop;
@@ -109,12 +109,14 @@ void timing(const real *d_x)
         CHECK(cudaEventSynchronize(stop));
         float elapsed_time;
         CHECK(cudaEventElapsedTime(&elapsed_time, start, stop));
-        printf("Time = %g ms.\n", elapsed_time);
+        // printf("Time = %g ms.\n", elapsed_time);
+        elapsed_time_sum += elapsed_time;
 
         CHECK(cudaEventDestroy(start));
         CHECK(cudaEventDestroy(stop));
     }
 
+    printf("Time = %g ms.\n", elapsed_time_sum / NUM_REPEATS);
     printf("sum = %f.\n", sum);
 }
 
