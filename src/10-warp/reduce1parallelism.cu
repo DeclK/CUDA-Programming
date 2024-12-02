@@ -73,6 +73,46 @@ void __global__ reduce_cp(const real *d_x, real *d_y, const int N)
     }
 }
 
+
+void __global__ optimized_reduce(const real *d_x, real *d_y, const int N)
+{
+    const int tid = threadIdx.x;
+    const int bid = blockIdx.x;
+    extern __shared__ real s_y[];
+
+    real y = 0.0;
+    const int stride = blockDim.x * gridDim.x;
+    for (int n = bid * blockDim.x + tid; n < N; n += stride)
+    {
+        y += d_x[n];    // sum(d[:, bid, tid]) grid ranges
+    }
+    s_y[tid] = y;
+    __syncthreads();
+
+    for (int offset = blockDim.x >> 1; offset >= 32; offset >>= 1)
+    {
+        if (tid < offset)
+        {
+            s_y[tid] += s_y[tid + offset];
+        }
+        __syncthreads();
+    }
+
+    y = s_y[tid];
+
+    thread_block_tile<32> g = tiled_partition<32>(this_thread_block());
+    for (int i = g.size() >> 1; i > 0; i >>= 1)
+    {
+        y += g.shfl_down(y, i);
+    }
+
+    if (tid == 0)
+    {
+        atomicAdd(d_y, y);
+    }
+}
+
+
 real reduce(const real *d_x)
 {
     const int ymem = sizeof(real) * GRID_SIZE;
@@ -84,6 +124,7 @@ real reduce(const real *d_x)
 
     reduce_cp<<<GRID_SIZE, BLOCK_SIZE, smem>>>(d_x, d_y, N);
     reduce_cp<<<1, 1024, sizeof(real) * 1024>>>(d_y, d_y, GRID_SIZE);
+    // optimized_reduce<<<GRID_SIZE, BLOCK_SIZE, smem>>>(d_x, d_y, N);
 
     CHECK(cudaMemcpy(h_y, d_y, sizeof(real), cudaMemcpyDeviceToHost));
     CHECK(cudaFree(d_y));

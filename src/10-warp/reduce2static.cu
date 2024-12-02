@@ -95,6 +95,7 @@ real reduce(const real *d_x)
 void timing(const real *d_x)
 {
     real sum = 0;
+    float elapsed_time_all;
 
     for (int repeat = 0; repeat < NUM_REPEATS; ++repeat)
     {
@@ -110,13 +111,14 @@ void timing(const real *d_x)
         CHECK(cudaEventSynchronize(stop));
         float elapsed_time;
         CHECK(cudaEventElapsedTime(&elapsed_time, start, stop));
-        printf("Time = %g ms.\n", elapsed_time);
+        elapsed_time_all += elapsed_time;
 
         CHECK(cudaEventDestroy(start));
         CHECK(cudaEventDestroy(stop));
     }
 
     printf("sum = %f.\n", sum);
+    printf("Time = %g ms.\n", elapsed_time_all / NUM_REPEATS);
 }
 
 

@@ -14,9 +14,10 @@ int main(void)
     thrust::inclusive_scan(x.begin(), x.end(), y.begin());
     for (int i = 0; i < y.size(); ++i)
     {
-        printf("%d ", (int) y[i]);
+        std::cout << y[i] << " ";
     }
-    printf("\n");
+    int test = 0;
+    std::cout << test + y[0] << std::endl;
     return 0;
 }
 
